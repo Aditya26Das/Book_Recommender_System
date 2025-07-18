@@ -1,14 +1,18 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
 
+import asyncio
+
+# Ensure Streamlit thread has an event loop
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
 from langchain_core.documents import Document
-from langchain_community.document_loaders import TextLoader
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from langchain_text_splitters import CharacterTextSplitter
 from langchain_chroma import Chroma
 
-import gradio as gr
 
 load_dotenv()
 
@@ -92,23 +96,31 @@ def recommend_books(
 categories = ["All"] + sorted(books["simple_categories"].unique())
 tones = ["All"] + ["Happy", "Surprising", "Angry", "Suspenseful", "Sad"]
 
-with gr.Blocks() as dashboard:
-    gr.Markdown("# Semantic book recommender")
+st.set_page_config(page_title="📚 Semantic Book Recommender", layout="wide")
+st.title("📚 Semantic Book Recommender")
 
-    with gr.Row():
-        user_query = gr.Textbox(label = "Please enter a description of a book:",
-                                placeholder = "e.g., A story about forgiveness")
-        category_dropdown = gr.Dropdown(choices = categories, label = "Select a category:", value = "All")
-        tone_dropdown = gr.Dropdown(choices = tones, label = "Select an emotional tone:", value = "All")
-        submit_button = gr.Button("Find recommendations")
+with st.container():
+    col1, col2, col3 = st.columns(3)
 
-    gr.Markdown("## Recommendations")
-    output = gr.Gallery(label = "Recommended books", columns = 8, rows = 2)
+    with col1:
+        query = st.text_input("🔎 Book Description", placeholder="e.g., A story about forgiveness")
+    with col2:
+        category = st.selectbox("📂 Category", categories)
+    with col3:
+        tone = st.selectbox("🎭 Emotional Tone", tones)
 
-    submit_button.click(fn = recommend_books,
-                        inputs = [user_query, category_dropdown, tone_dropdown],
-                        outputs = output)
+if st.button("Get Recommendations"):
+    if not query.strip():
+        st.warning("Please enter a valid book description to search.")
+    else:
+        results = recommend_books(query, category, tone)
+        st.markdown("## 🔮 Recommendations")
 
+        num_columns = 3
+        for i in range(0, len(results), num_columns):
+            cols = st.columns(num_columns)
+            for j, (image_url, caption) in enumerate(results[i:i+num_columns]):
+                with cols[j]:
+                    st.image(image_url, use_container_width=True)
+                    st.markdown(caption)
 
-if __name__ == "__main__":
-    dashboard.launch()
