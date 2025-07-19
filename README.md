@@ -42,7 +42,7 @@ A Streamlit-based intelligent book recommendation web app that suggests books ba
 
 ```bash
 git clone https://github.com/Aditya26Das/Book_Recommender_System.git
-cd app.py
+cd Book_Recommender_System
 ```
 
 ### Step 2: Create a Virtual Environment
